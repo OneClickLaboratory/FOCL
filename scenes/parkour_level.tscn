@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bm0qx1xrcnp50"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2"]
+size = Vector2(64, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3"]
+size = Vector2(32, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4"]
+size = Vector2(128, 16)
+
+[node name="ParkourLevel" type="Node2D"]
+[node name="Player" parent="." instance=ExtResource("1_0e8c7b")]
+position = Vector2(100, 300)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(0, 400)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_2")
+
+[node name="Platform1" type="StaticBody2D" parent="."]
+position = Vector2(300, 350)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform1"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_3")
+
+[node name="Platform2" type="StaticBody2D" parent="."]
+position = Vector2(500, 300)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_3")
+
+[node name="Platform3" type="StaticBody2D" parent="."]
+position = Vector2(700, 250)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform3"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_3")
+
+[node name="Platform4" type="StaticBody2D" parent="."]
+position = Vector2(900, 200)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform4"]
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_3")
+
+[node name="Goal" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goal"]
+position = Vector2(900, 150)
+shape = SubResource("RectangleShape2D_4")
+
+[node name="GoalLabel" type="Label" parent="Goal"]
+text = "GOAL!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelInfo" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 24
+text = "Parkour Level - Press ESC for pause menu"
+
+[node name="FPSLabel" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 60.0
+offset_right = 100.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 16
+text = "FPS: 60"
+visible = false
+
+[connection signal="body_entered" from="Goal" to="." method="_on_goal_body_entered"]

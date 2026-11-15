@@ -1,0 +1,145 @@
+[gd_scene format=3 uid="uid://bm0qx1xrcnp54"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5"]
+bg_color = Color(0.1, 0.1, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6"]
+bg_color = Color(0.2, 0.2, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="AuthScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.18, 1)
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 30
+
+[node name="Logo" type="Panel" parent="MainContainer"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+
+[node name="LogoLabel" type="Label" parent="MainContainer/Logo"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 48
+text = "FOCL"
+
+[node name="AuthPanel" type="Panel" parent="MainContainer"]
+custom_minimum_size = Vector2(400, 500)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_5")
+
+[node name="AuthContainer" type="VBoxContainer" parent="MainContainer/AuthPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="MainContainer/AuthPanel/AuthContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 32
+text = "Добро пожаловать в FOCL"
+
+[node name="ModeTabs" type="TabContainer" parent="MainContainer/AuthPanel/AuthContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LoginTab" type="VBoxContainer" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LoginEmail" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/LoginTab"]
+layout_mode = 2
+placeholder_text = "Email"
+size_flags_stretch_ratio = 1
+
+[node name="LoginPassword" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/LoginTab"]
+layout_mode = 2
+placeholder_text = "Пароль"
+secret = true
+size_flags_stretch_ratio = 1
+
+[node name="LoginButton" type="Button" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/LoginTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Войти"
+
+[node name="LoginSeparator" type="HSeparator" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/LoginTab"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GoogleLoginButton" type="Button" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/LoginTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Войти с Google"
+
+[node name="RegisterTab" type="VBoxContainer" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="RegisterUsername" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/RegisterTab"]
+layout_mode = 2
+placeholder_text = "Имя пользователя"
+size_flags_stretch_ratio = 1
+
+[node name="RegisterEmail" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/RegisterTab"]
+layout_mode = 2
+placeholder_text = "Email"
+size_flags_stretch_ratio = 1
+
+[node name="RegisterPassword" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/RegisterTab"]
+layout_mode = 2
+placeholder_text = "Пароль"
+secret = true
+size_flags_stretch_ratio = 1
+
+[node name="RegisterConfirmPassword" type="LineEdit" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/RegisterTab"]
+layout_mode = 2
+placeholder_text = "Подтвердите пароль"
+secret = true
+size_flags_stretch_ratio = 1
+
+[node name="RegisterButton" type="Button" parent="MainContainer/AuthPanel/AuthContainer/ModeTabs/RegisterTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Зарегистрироваться"
+
+[node name="ErrorLabel" type="Label" parent="MainContainer/AuthPanel/AuthContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 16
+text = ""
+modulate = Color(1, 0.2, 0.2, 1)

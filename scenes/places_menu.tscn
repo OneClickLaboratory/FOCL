@@ -1,0 +1,126 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8cxjy0k1w3l11"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5"]
+size = Vector2(300, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6"]
+size = Vector2(250, 350)
+
+[node name="PlacesMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.2, 0.95)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 36
+text = "Игровые места"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PlacesList" type="VBoxContainer" parent="Panel/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackButton" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Назад"
+
+# Add some example places
+[node name="Place1" type="Panel" parent="Panel/VBoxContainer/ScrollContainer/PlacesList"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="Place1Name" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place1"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 20
+text = "Паркур арена"
+
+[node name="Place1Desc" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place1"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 14
+text = "Тренируйся в паркуре на различных уровнях"
+
+[node name="Place1Button" type="Button" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Играть"
+
+[node name="Place2" type="Panel" parent="Panel/VBoxContainer/ScrollContainer/PlacesList"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="Place2Name" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place2"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 20
+text = "Битва на мечах"
+
+[node name="Place2Desc" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place2"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 14
+text = "Соревнуйся с другими игроками в боях"
+
+[node name="Place2Button" type="Button" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Играть"
+
+[node name="Place3" type="Panel" parent="Panel/VBoxContainer/ScrollContainer/PlacesList"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="Place3Name" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place3"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 20
+text = "Строительство"
+
+[node name="Place3Desc" type="Label" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place3"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 14
+text = "Строй свои собственные миры"
+
+[node name="Place3Button" type="Button" parent="Panel/VBoxContainer/ScrollContainer/PlacesList/Place3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Играть"

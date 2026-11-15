@@ -1,0 +1,173 @@
+[gd_scene format=3 uid="uid://bm0qx1xrcnp52"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color = Color(0.2, 0.2, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
+bg_color = Color(0.3, 0.3, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="GameCreator" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.15, 0.15, 0.25, 1)
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="Panel" parent="MainContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="HeaderLabel" type="Label" parent="MainContainer/Header"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 28
+text = "Создатель игр"
+
+[node name="Content" type="HSplitContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LeftPanel" type="Panel" parent="MainContainer/Content"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="LeftPanelContainer" type="VBoxContainer" parent="MainContainer/Content/LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TemplatesLabel" type="Label" parent="MainContainer/Content/LeftPanel/LeftPanelContainer"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 18
+text = "Шаблоны"
+
+[node name="TemplatesList" type="VBoxContainer" parent="MainContainer/Content/LeftPanel/LeftPanelContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ObjectsLabel" type="Label" parent="MainContainer/Content/LeftPanel/LeftPanelContainer"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 18
+text = "Объекты"
+
+[node name="ObjectsList" type="VBoxContainer" parent="MainContainer/Content/LeftPanel/LeftPanelContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RightPanel" type="Panel" parent="MainContainer/Content"]
+layout_mode = 2
+
+[node name="RightPanelContainer" type="VBoxContainer" parent="MainContainer/Content/RightPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="GamePreview" type="Panel" parent="MainContainer/Content/RightPanel/RightPanelContainer"]
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 2
+
+[node name="PreviewLabel" type="Label" parent="MainContainer/Content/RightPanel/RightPanelContainer/GamePreview"]
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 20
+text = "Предпросмотр игры"
+
+[node name="Properties" type="Panel" parent="MainContainer/Content/RightPanel/RightPanelContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PropertiesContainer" type="VBoxContainer" parent="MainContainer/Content/RightPanel/RightPanelContainer/Properties"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="PropertiesLabel" type="Label" parent="MainContainer/Content/RightPanel/RightPanelContainer/Properties/PropertiesContainer"]
+layout_mode = 2
+horizontal_alignment = 0
+theme_override_font_sizes/font_size = 18
+text = "Свойства"
+
+[node name="GameName" type="LineEdit" parent="MainContainer/Content/RightPanel/RightPanelContainer/Properties/PropertiesContainer"]
+layout_mode = 2
+placeholder_text = "Название игры"
+
+[node name="GameDescription" type="TextEdit" parent="MainContainer/Content/RightPanel/RightPanelContainer/Properties/PropertiesContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 100)
+placeholder_text = "Описание игры"
+
+[node name="BottomPanel" type="Panel" parent="MainContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="BottomButtons" type="HBoxContainer" parent="MainContainer/BottomPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="SaveButton" type="Button" parent="MainContainer/BottomPanel/BottomButtons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Сохранить"
+
+[node name="TestButton" type="Button" parent="MainContainer/BottomPanel/BottomButtons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Тест"
+
+[node name="PublishButton" type="Button" parent="MainContainer/BottomPanel/BottomButtons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Опубликовать"
+
+[node name="BackButton" type="Button" parent="MainContainer/BottomPanel/BottomButtons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Назад"
