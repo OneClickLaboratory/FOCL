@@ -1,79 +1,114 @@
 extends Node
+## Регистрация / вход через Supabase Auth (GoTrue REST API).
 
-var supabase_url = ""
-var supabase_anon_key = ""
-var supabase = null
+signal auth_result(ok: bool, message: String, logged_in: bool)
 
-func _init(url: String, key: String):
-	supabase_url = url
-	supabase_anon_key = key
+const CONFIG_PATH := "res://supabase_config.cfg"
+const SESSION_PATH := "user://session.json"
 
-func create_client(url: String, key: String):
-	# For Godot, we'll simulate Supabase functionality
-	# In a real implementation, you'd use a proper HTTP client library
-	return self
+var url := ""
+var anon_key := ""
+var access_token := ""
+var refresh_token := ""
+var user_id := ""
+var email := ""
 
-func from(table: String):
-	return SupabaseTable.new(table, self)
 
-class SupabaseTable:
-	var table_name: String
-	var client: SupabaseClient
-	
-	func _init(name: String, supabase_client: SupabaseClient):
-		table_name = name
-		client = supabase_client
-	
-	func select(columns: String = "*"):
-		return SupabaseQuery.new("select", columns, table_name, client)
-	
-	func insert(data: Dictionary):
-		return SupabaseQuery.new("insert", data, table_name, client)
-	
-	func update(data: Dictionary):
-		return SupabaseQuery.new("update", data, table_name, client)
-	
-	func delete():
-		return SupabaseQuery.new("delete", {}, table_name, client)
+func _ready() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(CONFIG_PATH) == OK:
+        url = str(cfg.get_value("supabase", "url", "")).strip_edges().trim_suffix("/")
+        anon_key = str(cfg.get_value("supabase", "anon_key", "")).strip_edges()
 
-class SupabaseQuery:
-	var type: String
-	var data: Dictionary
-	var table_name: String
-	var client: SupabaseClient
-	
-	func _init(query_type: String, query_data: Dictionary, table: String, supabase_client: SupabaseClient):
-		type = query_type
-		data = query_data
-		table_name = table
-		client = supabase_client
-	
-	func eq(column: String, value):
-		data["eq"] = {column: value}
-		return self
-	
-	func or_filter(condition: String):
-		data["or"] = condition
-		return self
-	
-	func limit(count: int):
-		data["limit"] = count
-		return self
-	
-	func single():
-		data["single"] = true
-		return self
-	
-	func maybe_single():
-		data["maybe_single"] = true
-		return self
-	
-	func execute():
-		# Simulate database response
-		print("Executing %s query on %s table: %s" % [type, table_name, str(data)])
-		
-		# Return mock data for testing
-		if type == "select" and table_name == "users":
-			return {"data": [{"id": 1, "email": "test@example.com", "username": "testuser", "balance": 100}]}
-		
-		return {"data": []}
+
+func is_configured() -> bool:
+    return url.begins_with("http") and not url.contains("YOUR") and anon_key != "" and not anon_key.contains("YOUR")
+
+
+func display_name() -> String:
+    return email.split("@")[0] if email != "" else "Игрок"
+
+
+func sign_up(mail: String, password: String) -> void:
+    var r := await _request("/auth/v1/signup", {"email": mail, "password": password})
+    if not r.ok:
+        auth_result.emit(false, _error_text(r), false)
+        return
+    var data: Dictionary = r.data
+    if data.has("access_token"):
+        _apply_session(data)
+        auth_result.emit(true, "Аккаунт создан!", true)
+    else:
+        auth_result.emit(true, "Аккаунт создан. Подтверди email по ссылке из письма, затем войди.", false)
+
+
+func sign_in(mail: String, password: String) -> void:
+    var r := await _request("/auth/v1/token?grant_type=password", {"email": mail, "password": password})
+    if not r.ok:
+        auth_result.emit(false, _error_text(r), false)
+        return
+    _apply_session(r.data)
+    auth_result.emit(true, "Вход выполнен", true)
+
+
+func try_restore() -> bool:
+    if not is_configured() or not FileAccess.file_exists(SESSION_PATH):
+        return false
+    var f := FileAccess.open(SESSION_PATH, FileAccess.READ)
+    var saved = JSON.parse_string(f.get_as_text())
+    f.close()
+    if not (saved is Dictionary) or str(saved.get("refresh_token", "")) == "":
+        return false
+    var r := await _request("/auth/v1/token?grant_type=refresh_token", {"refresh_token": saved["refresh_token"]})
+    if not r.ok:
+        return false
+    _apply_session(r.data)
+    return true
+
+
+func sign_out() -> void:
+    access_token = ""
+    refresh_token = ""
+    user_id = ""
+    email = ""
+    if FileAccess.file_exists(SESSION_PATH):
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(SESSION_PATH))
+
+
+func _apply_session(data: Dictionary) -> void:
+    access_token = str(data.get("access_token", ""))
+    refresh_token = str(data.get("refresh_token", ""))
+    var u: Dictionary = data.get("user", {})
+    user_id = str(u.get("id", ""))
+    email = str(u.get("email", ""))
+    var f := FileAccess.open(SESSION_PATH, FileAccess.WRITE)
+    if f:
+        f.store_string(JSON.stringify({"refresh_token": refresh_token}))
+        f.close()
+
+
+func _error_text(r: Dictionary) -> String:
+    var d: Dictionary = r.data if r.data is Dictionary else {}
+    for key in ["msg", "error_description", "message", "error"]:
+        if d.has(key):
+            return str(d[key])
+    return "Ошибка сети (код %d)" % int(r.code)
+
+
+func _request(path: String, body: Dictionary) -> Dictionary:
+    var http := HTTPRequest.new()
+    http.timeout = 15.0
+    add_child(http)
+    var headers := PackedStringArray(["apikey: " + anon_key, "Content-Type: application/json"])
+    var err := http.request(url + path, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+    if err != OK:
+        http.queue_free()
+        return {"ok": false, "code": 0, "data": {}}
+    var res = await http.request_completed
+    http.queue_free()
+    var text: String = (res[3] as PackedByteArray).get_string_from_utf8()
+    var data = JSON.parse_string(text)
+    if data == null:
+        data = {}
+    var ok: bool = res[0] == HTTPRequest.RESULT_SUCCESS and res[1] >= 200 and res[1] < 300
+    return {"ok": ok, "code": res[1], "data": data}
