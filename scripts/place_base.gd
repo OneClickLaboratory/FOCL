@@ -4,6 +4,7 @@ extends Node3D
 ## Чтобы сделать новый плейс: унаследуйся и переопредели _build_world().
 
 const PauseMenu := preload("res://scripts/pause_menu.gd")
+const PlaceShop := preload("res://scripts/place_shop.gd")
 
 var player: Player
 var sun: DirectionalLight3D
@@ -11,22 +12,49 @@ var env: Environment
 var sky_mat: ProceduralSkyMaterial
 var spawn_point := Vector3(0, 2, 0)
 
+var shop  # PlaceShop; тип не указан - создаётся в _setup_ui
 var focls_label: Label
+var hint_label: Label
 var toast_label: Label
 var toast_tween: Tween
 
 
 func _ready() -> void:
+    for p in Game.PLACES:
+        if p["scene"] == scene_file_path:
+            Game.current_place_id = str(p["id"])
+    for item in shop_items():
+        Game.define_item(item)
     _setup_environment()
     _build_world()
     add_trigger(Vector3(0, -25, 0), Vector3(800, 2, 800), _kill_player)  # "бездна"
     _spawn_player()
+    _on_player_spawned()
     _setup_ui()
     Game.time_changed.connect(_apply_time)
     _apply_time(Game.time_of_day)
 
 
 func _build_world() -> void:
+    pass
+
+
+# ===== API для креаторов плейсов =====
+## Товары твоего плейса, продающиеся в магазине (клавиша B). Пример:
+##   func shop_items() -> Array:
+##       return [{"id": "jetpack", "name": "Джетпак", "price": 200,
+##                "desc": "Летай по плейсу", "color": Color(0.3, 0.6, 1.0)}]
+func shop_items() -> Array:
+    return []
+
+
+## Вызывается после успешной покупки товара этого плейса - выдай возможность.
+func on_item_purchased(item: Dictionary) -> void:
+    pass
+
+
+## Вызывается после создания игрока - удобно подключить его сигналы.
+func _on_player_spawned() -> void:
     pass
 
 
@@ -96,16 +124,16 @@ func _setup_ui() -> void:
     Game.focls_changed.connect(_on_focls_changed)
     _on_focls_changed(Game.focls)
 
-    var hint := Label.new()
-    hint.text = "WASD - ходьба   Пробел - прыжок   ПКМ - камера   Колесо - зум   Esc - меню   ` - консоль"
-    hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-    hint.offset_top = -34
-    hint.offset_left = 14
-    hint.add_theme_color_override("font_outline_color", Color.BLACK)
-    hint.add_theme_constant_override("outline_size", 4)
-    hint.modulate = Color(1, 1, 1, 0.8)
-    hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    hud.add_child(hint)
+    hint_label = Label.new()
+    hint_label.text = _hint_text()
+    hint_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+    hint_label.offset_top = -34
+    hint_label.offset_left = 14
+    hint_label.add_theme_color_override("font_outline_color", Color.BLACK)
+    hint_label.add_theme_constant_override("outline_size", 4)
+    hint_label.modulate = Color(1, 1, 1, 0.8)
+    hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(hint_label)
 
     toast_label = Label.new()
     toast_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
@@ -120,10 +148,30 @@ func _setup_ui() -> void:
     hud.add_child(toast_label)
 
     add_child(PauseMenu.new())
+    shop = PlaceShop.new()
+    shop.place = self
+    add_child(shop)
+    Game.item_purchased.connect(_on_game_item_purchased)
 
 
 func _on_focls_changed(v: int) -> void:
     focls_label.text = "%d Focls" % v
+
+
+func _hint_text() -> String:
+    var t := "WASD - ходьба   Пробел - прыжок   ПКМ - камера   Колесо - зум   Esc - меню   ` - консоль"
+    if not shop_items().is_empty():
+        t += "   B - магазин"
+    return t
+
+
+func _on_game_item_purchased(id: String) -> void:
+    var item := Game.item_def(id)
+    if item.is_empty() or str(item.get("place", "")) != Game.current_place_id:
+        return
+    show_toast("Куплено: %s" % str(item["name"]))
+    hint_label.text = _hint_text()
+    on_item_purchased(item)
 
 
 func show_toast(text: String) -> void:
@@ -164,6 +212,21 @@ func add_box(pos: Vector3, size: Vector3, color: Color) -> StaticBody3D:
     _attach_box(body, size, color)
     add_child(body)
     return body
+
+
+## Блок без коллизии - для визуальных деталей, крепящихся к игроку (ковры, шляпы).
+func add_visual_box(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
+    var mi := MeshInstance3D.new()
+    var bm := BoxMesh.new()
+    bm.size = size
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color
+    mat.roughness = 0.7
+    bm.material = mat
+    mi.mesh = bm
+    mi.position = pos
+    parent.add_child(mi)
+    return mi
 
 
 func add_kill_brick(pos: Vector3, size: Vector3) -> void:

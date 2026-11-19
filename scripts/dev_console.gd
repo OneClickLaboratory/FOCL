@@ -117,6 +117,9 @@ func run_command(text: String) -> void:
             _print("  time set <0-24>    - установить время суток (например: time set 18.5 или time set 6:30)")
             _print("  fps_show [on|off]  - показать/скрыть счётчик FPS")
             _print("  reset              - убить персонажа (он возродится на последнем чекпоинте)")
+            _print("  focls <n>          - выдать себе Focls")
+            _print("  give <id>          - выдать игровой товар (бесплатно)")
+            _print("  items              - список товаров магазина")
             _print("  quit               - закрыть игру")
         "time":
             _cmd_time(parts)
@@ -133,10 +136,39 @@ func run_command(text: String) -> void:
                 _print("Персонаж сброшен.")
             else:
                 _print("[color=red]Нет персонажа (вы не в плейсе).[/color]")
+        "focls":
+            if parts.size() > 1 and parts[1].is_valid_int():
+                Game.add_focls(parts[1].to_int())
+                _print("Баланс: %d Focls" % Game.focls)
+            else:
+                _print("[color=red]Использование: focls <число>[/color]")
+        "give":
+            _cmd_give(parts)
+        "items":
+            if Game.item_catalog.is_empty():
+                _print("Товары не найдены - они регистрируются при входе в плейс.")
+            for item in Game.item_catalog:
+                _print("  %s - %s, %d Focls%s" % [item["id"], item["name"], int(item["price"]), "  [куплено]" if Game.has_item(str(item["id"])) else ""])
         "quit":
             get_tree().quit()
         _:
             _print("[color=red]Неизвестная команда. Введите help.[/color]")
+
+
+func _cmd_give(parts: PackedStringArray) -> void:
+    if parts.size() < 2:
+        _print("[color=red]Использование: give <id>[/color]")
+        return
+    var id := parts[1]
+    if Game.item_def(id).is_empty():
+        _print("[color=red]Нет товара с id \"%s\" (список: items)[/color]" % id)
+    elif Game.has_item(id):
+        _print("Товар \"%s\" уже выдан." % id)
+    else:
+        Game.items_owned.append(id)
+        Game.save()
+        Game.item_purchased.emit(id)
+        _print("Выдан товар \"%s\"." % id)
 
 
 func _cmd_time(parts: PackedStringArray) -> void:

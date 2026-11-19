@@ -4,8 +4,11 @@ extends CharacterBody3D
 ## камера от третьего лица (ПКМ - вращение, колесо - зум).
 
 signal died
+signal flying_changed(on: bool)
+signal hp_changed(hp: float, max_hp: float)
 
 const SPEED := 9.0
+const FLY_SPEED := 14.0
 const ACCEL := 60.0
 const JUMP_VELOCITY := 10.5
 const GRAVITY := 28.0
@@ -13,6 +16,11 @@ const RESPAWN_TIME := 2.0
 
 var spawn_position := Vector3(0, 2, 0)
 var dead := false
+var flying := false
+var fly_time := 0.0
+var max_hp := 100.0
+var hp := 100.0
+var respawn_enabled := true
 
 var yaw := 0.0
 var pitch := -0.35
@@ -111,6 +119,41 @@ func _update_camera() -> void:
     spring.spring_length = zoom
 
 
+# ---------- полёт (общая возможность; креатор включает через set_flying) ----------
+func set_flying(on: bool) -> void:
+    if on == flying or dead:
+        return
+    flying = on
+    if on:
+        velocity.y = maxf(velocity.y, 3.0)
+    else:
+        model.position.y = 0.0
+    flying_changed.emit(on)
+
+
+# ---------- здоровье (общая система; креатор вызывает hurt/heal/set_max_hp) ----------
+func set_max_hp(v: float) -> void:
+    max_hp = maxf(v, 1.0)
+    hp = minf(hp, max_hp)
+    hp_changed.emit(hp, max_hp)
+
+
+func heal(amount: float) -> void:
+    if dead:
+        return
+    hp = minf(hp + amount, max_hp)
+    hp_changed.emit(hp, max_hp)
+
+
+func hurt(amount: float) -> void:
+    if dead:
+        return
+    hp = maxf(hp - amount, 0.0)
+    hp_changed.emit(hp, max_hp)
+    if hp <= 0.0:
+        die()
+
+
 func _unhandled_input(event: InputEvent) -> void:
     if Game.is_ui_blocked():
         return
@@ -133,21 +176,29 @@ func _physics_process(delta: float) -> void:
     if blocked and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
         Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
-    if not is_on_floor():
+    if flying:
+        var up := 0.0
+        if not dead and not blocked:
+            up = float(_key(KEY_SPACE)) - float(_key(KEY_SHIFT))
+        velocity.y = move_toward(velocity.y, up * FLY_SPEED, ACCEL * delta)
+        fly_time += delta
+        model.position.y = sin(fly_time * 2.5) * 0.04  # лёгкое парение
+    elif not is_on_floor():
         velocity.y -= GRAVITY * delta
 
     var input_dir := Vector2.ZERO
     if not dead and not blocked:
         input_dir.x = float(_key(KEY_D) or _key(KEY_RIGHT)) - float(_key(KEY_A) or _key(KEY_LEFT))
         input_dir.y = float(_key(KEY_S) or _key(KEY_DOWN)) - float(_key(KEY_W) or _key(KEY_UP))
-        if _key(KEY_SPACE) and is_on_floor():
+        if not flying and _key(KEY_SPACE) and is_on_floor():
             velocity.y = JUMP_VELOCITY
 
     var dir := Vector3.ZERO
     if input_dir != Vector2.ZERO:
         dir = (Basis(Vector3.UP, yaw) * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-    velocity.x = move_toward(velocity.x, dir.x * SPEED, ACCEL * delta)
-    velocity.z = move_toward(velocity.z, dir.z * SPEED, ACCEL * delta)
+    var speed := FLY_SPEED if flying else SPEED
+    velocity.x = move_toward(velocity.x, dir.x * speed, ACCEL * delta)
+    velocity.z = move_toward(velocity.z, dir.z * speed, ACCEL * delta)
     move_and_slide()
 
     _animate(delta, dir)
@@ -163,6 +214,12 @@ func _key(code: Key) -> bool:
 
 func _animate(delta: float, dir: Vector3) -> void:
     if dead:
+        return
+    if flying:
+        left_leg.rotation.x = lerpf(left_leg.rotation.x, 1.35, 10.0 * delta)
+        right_leg.rotation.x = lerpf(right_leg.rotation.x, 1.35, 10.0 * delta)
+        left_arm.rotation.x = lerpf(left_arm.rotation.x, 0.45, 10.0 * delta)
+        right_arm.rotation.x = lerpf(right_arm.rotation.x, 0.45, 10.0 * delta)
         return
     var speed := Vector2(velocity.x, velocity.z).length()
     if dir != Vector3.ZERO:
@@ -185,8 +242,11 @@ func _animate(delta: float, dir: Vector3) -> void:
 func die() -> void:
     if dead:
         return
+    set_flying(false)
     dead = true
     died.emit()
+    if not respawn_enabled:
+        return
     var tw := create_tween()
     tw.tween_property(model, "rotation:x", -PI / 2.0, 0.35)
     tw.tween_interval(RESPAWN_TIME - 0.35)
@@ -195,6 +255,9 @@ func die() -> void:
 
 func respawn() -> void:
     dead = false
+    set_flying(false)
     model.rotation.x = 0.0
     position = spawn_position
     velocity = Vector3.ZERO
+    hp = max_hp
+    hp_changed.emit(hp, max_hp)

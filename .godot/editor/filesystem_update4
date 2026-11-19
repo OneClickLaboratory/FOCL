@@ -1,0 +1,6 @@
+res://scripts/game.gd
+res://scripts/place_base.gd
+res://scripts/places/parkour.gd
+res://scripts/place_shop.gd
+res://scripts/player.gd
+res://scripts/dev_console.gd
