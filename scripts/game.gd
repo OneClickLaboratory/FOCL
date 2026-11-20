@@ -22,6 +22,12 @@ const PLACES := [
         "desc": "Волны зомби, стрельба (ЛКМ), 4 вида оружия и апгрейды в магазине (B). Рекорды сохраняются. За убийства дают Focls.",
         "scene": "res://scenes/places/zombies.tscn",
     },
+    {
+        "id": "casino",
+        "name": "Казино «Золотой Фокус»",
+        "desc": "Рулетка, колесо фортуны, слоты и кости - ставки Focls, рекорд выигрыша сохраняется. Собирай фишки и коктейли (E), используй (V).",
+        "scene": "res://scenes/places/casino.tscn",
+    },
 ]
 
 const SHOP_ITEMS := [
@@ -48,10 +54,11 @@ var show_fps := false
 var console_open := false
 var pause_open := false
 var shop_open := false
+var dialog_open := false
 
 
 func is_ui_blocked() -> bool:
-    return console_open or pause_open or shop_open
+    return console_open or pause_open or shop_open or dialog_open
 
 
 # ---------- профиль ----------
@@ -211,6 +218,7 @@ func go_to_place(place_id: String) -> void:
             current_place_id = place_id
             pause_open = false
             shop_open = false
+            dialog_open = false
             get_tree().change_scene_to_file(p["scene"])
             return
 
@@ -230,4 +238,5 @@ func go_to_login() -> void:
 func _leave_place() -> void:
     pause_open = false
     shop_open = false
+    dialog_open = false
     current_place_id = ""

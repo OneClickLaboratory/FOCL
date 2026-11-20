@@ -5,6 +5,7 @@ extends Node3D
 
 const PauseMenu := preload("res://scripts/pause_menu.gd")
 const PlaceShop := preload("res://scripts/place_shop.gd")
+const ItemPickupScript := preload("res://scripts/item_pickup.gd")
 
 var player: Player
 var sun: DirectionalLight3D
@@ -13,6 +14,9 @@ var sky_mat: ProceduralSkyMaterial
 var spawn_point := Vector3(0, 2, 0)
 
 var shop  # PlaceShop; тип не указан - создаётся в _setup_ui
+var hud: CanvasLayer
+var hotbar: HBoxContainer
+var hotbar_slots: Array = []
 var focls_label: Label
 var hint_label: Label
 var toast_label: Label
@@ -106,7 +110,7 @@ func _kill_player(p: Player) -> void:
 
 # ---------- UI ----------
 func _setup_ui() -> void:
-    var hud := CanvasLayer.new()
+    hud = CanvasLayer.new()
     hud.layer = 10
     add_child(hud)
 
@@ -152,6 +156,9 @@ func _setup_ui() -> void:
     shop.place = self
     add_child(shop)
     Game.item_purchased.connect(_on_game_item_purchased)
+    player.drop_requested.connect(_on_drop_requested)
+    if player.inventory_enabled:
+        _build_hotbar()
 
 
 func _on_focls_changed(v: int) -> void:
@@ -162,6 +169,8 @@ func _hint_text() -> String:
     var t := "WASD - ходьба   Пробел - прыжок   ПКМ - камера   Колесо - зум   Esc - меню   ` - консоль"
     if not shop_items().is_empty():
         t += "   B - магазин"
+    if player.inventory_enabled:
+        t += "   1-8 - слоты   E - подобрать   V - использовать   G - выбросить"
     return t
 
 
@@ -264,3 +273,94 @@ func add_sign(text: String, pos: Vector3) -> void:
     l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     l.outline_size = 24
     add_child(l)
+
+
+# ---------- инвентарь: подбор, выброс и хотбар ----------
+## Предмет на земле (подбор клавишей E). Спавн: add_pickup(pos, id, count).
+func add_pickup(pos: Vector3, id: String, count := 1):
+    var p := ItemPickupScript.new()
+    p.place = self
+    p.item_id = id
+    p.count = count
+    p.position = pos
+    add_child(p)
+    return p
+
+
+func _on_drop_requested(id: String, count: int) -> void:
+    var fwd := -player.model.global_basis.z
+    var p = add_pickup(player.global_position + fwd * 1.8 + Vector3(0, 0.9, 0), id, count)
+    p.grace_t = 1.2
+
+
+## Хотбар строится автоматически, если у игрока включён inventory_enabled.
+func _build_hotbar() -> void:
+    hotbar = HBoxContainer.new()
+    hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    hotbar.offset_left = -221
+    hotbar.offset_right = 221
+    hotbar.offset_top = -76
+    hotbar.offset_bottom = -26
+    hotbar.add_theme_constant_override("separation", 6)
+    hud.add_child(hotbar)
+    for i in player.inv_slots.size():
+        var panel := PanelContainer.new()
+        panel.custom_minimum_size = Vector2(50, 50)
+        var sb := StyleBoxFlat.new()
+        sb.bg_color = Color(0.1, 0.11, 0.15, 0.85)
+        sb.set_corner_radius_all(6)
+        sb.set_border_width_all(2)
+        sb.border_color = Color(1, 1, 1, 0.15)
+        panel.add_theme_stylebox_override("panel", sb)
+        panel.set_meta("sb", sb)
+        var fill := ColorRect.new()
+        fill.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+        fill.offset_left = 7
+        fill.offset_top = 7
+        fill.offset_right = -7
+        fill.offset_bottom = -7
+        fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        panel.add_child(fill)
+        panel.set_meta("fill", fill)
+        var count_l := Label.new()
+        count_l.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+        count_l.offset_left = -30
+        count_l.offset_top = -22
+        count_l.offset_right = -4
+        count_l.offset_bottom = -2
+        count_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+        count_l.add_theme_font_size_override("font_size", 15)
+        count_l.add_theme_color_override("font_outline_color", Color.BLACK)
+        count_l.add_theme_constant_override("outline_size", 4)
+        count_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        panel.add_child(count_l)
+        panel.set_meta("count", count_l)
+        var key_l := Label.new()
+        key_l.text = str(i + 1)
+        key_l.position = Vector2(4, 1)
+        key_l.add_theme_font_size_override("font_size", 12)
+        key_l.modulate = Color(1, 1, 1, 0.55)
+        key_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        panel.add_child(key_l)
+        hotbar.add_child(panel)
+        hotbar_slots.append(panel)
+    player.inventory_changed.connect(_refresh_hotbar)
+    player.slot_selected.connect(func(_i: int) -> void: _refresh_hotbar())
+    _refresh_hotbar()
+
+
+func _refresh_hotbar() -> void:
+    for i in hotbar_slots.size():
+        var panel: PanelContainer = hotbar_slots[i]
+        var fill: ColorRect = panel.get_meta("fill")
+        var count_l: Label = panel.get_meta("count")
+        var sb: StyleBoxFlat = panel.get_meta("sb")
+        var s: Dictionary = player.inv_slots[i]
+        if s.is_empty():
+            fill.visible = false
+            count_l.text = ""
+        else:
+            fill.visible = true
+            fill.color = Game.item_def(str(s["id"])).get("color", Color(1, 1, 1))
+            count_l.text = str(int(s["count"])) if int(s["count"]) > 1 else ""
+        sb.border_color = Color(1, 0.82, 0.25) if i == player.inv_selected else Color(1, 1, 1, 0.15)

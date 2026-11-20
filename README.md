@@ -40,6 +40,10 @@ API в `Game`: `define_item({...})` (регистрация кодом, плей
 сигнал `item_purchased(id)`. Данные твоего плейса (рекорды, прогресс) храни
 через `Game.set_place_data(key, value)` / `Game.get_place_data(key, default)` -
 сохраняются в профиле. У игрока есть общие возможности: полёт
-`player.set_flying(true/false)` (сигнал `flying_changed`) и здоровье
-`player.hurt/heal/set_max_hp` (сигнал `hp_changed`, `died`).
-Пример большой игры на этом API - плейс «Выживание: Зомби» (scripts/places/zombies.gd).
+`player.set_flying(true/false)` (сигнал `flying_changed`), здоровье
+`player.hurt/heal/set_max_hp` (сигнал `hp_changed`, `died`) и инвентарь:
+включи `player.inventory_enabled = true` в `_on_player_spawned()` - получишь
+хотбар на 8 слотов (клавиши 1-8), подбор предметов с земли `add_pickup(pos, id, count)`
+(E), использование (V -> сигнал `item_used`) и выброс (G -> `drop_requested`).
+Примеры: паркур с ковром (parkour.gd), волны зомби (zombies.gd),
+казино с рулеткой/слотами/костями (casino.gd).

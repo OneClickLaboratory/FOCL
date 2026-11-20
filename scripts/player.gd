@@ -6,6 +6,10 @@ extends CharacterBody3D
 signal died
 signal flying_changed(on: bool)
 signal hp_changed(hp: float, max_hp: float)
+signal inventory_changed
+signal slot_selected(index: int)
+signal item_used(id: String)
+signal drop_requested(id: String, count: int)
 
 const SPEED := 9.0
 const FLY_SPEED := 14.0
@@ -21,6 +25,11 @@ var fly_time := 0.0
 var max_hp := 100.0
 var hp := 100.0
 var respawn_enabled := true
+
+const INV_SIZE := 8
+var inventory_enabled := false
+var inv_selected := 0
+var inv_slots: Array = [{}, {}, {}, {}, {}, {}, {}, {}]
 
 var yaw := 0.0
 var pitch := -0.35
@@ -154,9 +163,122 @@ func hurt(amount: float) -> void:
         die()
 
 
+# ---------- инвентарь и хотбар (включи inventory_enabled в своём плейсе) ----------
+## 8 слотов: {"id": ..., "count": ...} или {} для пустого. Предметы описываются
+## через Game.define_item (имя и цвет берутся оттуда). Клавиши (когда включён):
+## 1-8 - выбрать слот, V - использовать (сигнал item_used), G - выбросить
+## (сигнал drop_requested - спавнит подборку на земле через PlaceBase).
+
+func inventory_add(id: String, count := 1) -> bool:
+    var left := count
+    for s in inv_slots:
+        if s.get("id", "") == id and int(s.get("count", 0)) < 99:
+            var can: int = mini(99 - int(s["count"]), left)
+            s["count"] = int(s["count"]) + can
+            left -= can
+            if left <= 0:
+                break
+    while left > 0:
+        var idx := _inv_empty_slot()
+        if idx < 0:
+            break
+        var put: int = mini(left, 99)
+        inv_slots[idx] = {"id": id, "count": put}
+        left -= put
+    inventory_changed.emit()
+    return left < count
+
+
+func _inv_empty_slot() -> int:
+    for i in inv_slots.size():
+        if inv_slots[i].is_empty():
+            return i
+    return -1
+
+
+func inventory_count(id: String) -> int:
+    var n := 0
+    for s in inv_slots:
+        if s.get("id", "") == id:
+            n += int(s.get("count", 0))
+    return n
+
+
+func inventory_remove(id: String, count := 1) -> bool:
+    if inventory_count(id) < count:
+        return false
+    var left := count
+    for i in range(inv_slots.size() - 1, -1, -1):
+        var s: Dictionary = inv_slots[i]
+        if s.get("id", "") == id:
+            var take: int = mini(int(s["count"]), left)
+            s["count"] = int(s["count"]) - take
+            left -= take
+            if int(s["count"]) <= 0:
+                inv_slots[i] = {}
+            if left <= 0:
+                break
+    inventory_changed.emit()
+    return true
+
+
+func inventory_select(i: int) -> void:
+    if not inventory_enabled or i < 0 or i >= inv_slots.size():
+        return
+    inv_selected = i
+    slot_selected.emit(i)
+    inventory_changed.emit()
+
+
+func inv_selected_id() -> String:
+    return str(inv_slots[inv_selected].get("id", ""))
+
+
+func inventory_use_selected(consume := true) -> void:
+    var s: Dictionary = inv_slots[inv_selected]
+    if s.is_empty():
+        return
+    var id := str(s["id"])
+    if consume:
+        inventory_remove(id, 1)
+    item_used.emit(id)
+
+
+func inventory_drop_selected() -> void:
+    var s: Dictionary = inv_slots[inv_selected]
+    if s.is_empty():
+        return
+    var id := str(s["id"])
+    var count: int = int(s["count"])
+    inv_slots[inv_selected] = {}
+    inventory_changed.emit()
+    drop_requested.emit(id, count)
+
+
 func _unhandled_input(event: InputEvent) -> void:
     if Game.is_ui_blocked():
         return
+    var ke := event as InputEventKey
+    if inventory_enabled and not dead and ke != null and ke.pressed and not ke.echo:
+        var slot := -1
+        match ke.physical_keycode:
+            KEY_1: slot = 0
+            KEY_2: slot = 1
+            KEY_3: slot = 2
+            KEY_4: slot = 3
+            KEY_5: slot = 4
+            KEY_6: slot = 5
+            KEY_7: slot = 6
+            KEY_8: slot = 7
+        if slot >= 0:
+            inventory_select(slot)
+            get_viewport().set_input_as_handled()
+        elif ke.physical_keycode == KEY_V:
+            inventory_use_selected(true)
+            get_viewport().set_input_as_handled()
+        elif ke.physical_keycode == KEY_G:
+            inventory_drop_selected()
+            get_viewport().set_input_as_handled()
     var mb := event as InputEventMouseButton
     if mb:
         if mb.button_index == MOUSE_BUTTON_RIGHT:

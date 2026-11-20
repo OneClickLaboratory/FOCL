@@ -381,7 +381,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # ----- HUD и Game Over -----
-var hud: CanvasLayer
 var hp_fill: ColorRect
 var wave_label: Label
 var info_label: Label

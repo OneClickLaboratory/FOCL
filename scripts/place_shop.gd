@@ -33,7 +33,7 @@ func _input(event: InputEvent) -> void:
     var k := event as InputEventKey
     if k == null or not k.pressed or k.echo:
         return
-    if Game.console_open or Game.pause_open:
+    if Game.console_open or Game.pause_open or Game.dialog_open:
         return
     if k.physical_keycode == KEY_B and not confirm_panel.visible:
         set_open(not panel.visible)

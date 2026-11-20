@@ -72,8 +72,8 @@ func _input(event: InputEvent) -> void:
     var k := event as InputEventKey
     if k == null or not k.pressed or k.echo or k.keycode != KEY_ESCAPE:
         return
-    if Game.console_open or Game.shop_open:
-        return  # Esc закроет консоль или магазин
+    if Game.console_open or Game.shop_open or Game.dialog_open:
+        return  # Esc закроет консоль, магазин или диалог игры
     set_open(not panel.visible)
     get_viewport().set_input_as_handled()
 
