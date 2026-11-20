@@ -1,2 +1,5 @@
 res://scripts/place_base.gd
 res://scripts/places/zombies.gd
+res://scripts/places/casino.gd
+res://scripts/place_shop.gd
+res://scripts/player.gd

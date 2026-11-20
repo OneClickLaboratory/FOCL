@@ -145,6 +145,7 @@ func _setup_ui() -> void:
     toast_label.offset_bottom = 120
     toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     toast_label.add_theme_font_size_override("font_size", 30)
+    toast_label.add_theme_color_override("font_color", Color(1, 0.86, 0.5))
     toast_label.add_theme_color_override("font_outline_color", Color.BLACK)
     toast_label.add_theme_constant_override("outline_size", 6)
     toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -307,10 +308,10 @@ func _build_hotbar() -> void:
         var panel := PanelContainer.new()
         panel.custom_minimum_size = Vector2(50, 50)
         var sb := StyleBoxFlat.new()
-        sb.bg_color = Color(0.1, 0.11, 0.15, 0.85)
-        sb.set_corner_radius_all(6)
+        sb.bg_color = Color(0.06, 0.08, 0.12, 0.88)
+        sb.set_corner_radius_all(7)
         sb.set_border_width_all(2)
-        sb.border_color = Color(1, 1, 1, 0.15)
+        sb.border_color = Color(0.9, 0.72, 0.25, 0.22)
         panel.add_theme_stylebox_override("panel", sb)
         panel.set_meta("sb", sb)
         var fill := ColorRect.new()
@@ -363,4 +364,4 @@ func _refresh_hotbar() -> void:
             fill.visible = true
             fill.color = Game.item_def(str(s["id"])).get("color", Color(1, 1, 1))
             count_l.text = str(int(s["count"])) if int(s["count"]) > 1 else ""
-        sb.border_color = Color(1, 0.82, 0.25) if i == player.inv_selected else Color(1, 1, 1, 0.15)
+        sb.border_color = Color(1.0, 0.84, 0.4) if i == player.inv_selected else Color(0.9, 0.72, 0.25, 0.22)

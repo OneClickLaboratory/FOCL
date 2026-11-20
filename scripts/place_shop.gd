@@ -4,6 +4,7 @@ extends CanvasLayer
 ## Открывается клавишей B. Перед списанием показывается окно подтверждения оплаты.
 
 const SIZE := Vector2(640, 500)
+const UITheme := preload("res://scripts/ui_theme.gd")
 
 var place  # PlaceBase-плейс, которому принадлежит магазин (без типа - динамический доступ)
 
@@ -80,7 +81,7 @@ func _build_panel() -> void:
     box.add_child(title_row)
     var title := Label.new()
     title.text = "🛒  Магазин плейса"
-    title.add_theme_font_size_override("font_size", 26)
+    UITheme.title(title)
     title_row.add_child(title)
     var spacer := Control.new()
     spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -88,6 +89,7 @@ func _build_panel() -> void:
     var close_btn := Button.new()
     close_btn.text = "✕  Закрыть"
     close_btn.pressed.connect(set_open.bind(false))
+    UITheme.dark_button(close_btn)
     title_row.add_child(close_btn)
 
     balance_label = Label.new()
@@ -150,6 +152,7 @@ func _refresh() -> void:
         var price: int = item["price"]
         var btn := Button.new()
         btn.custom_minimum_size = Vector2(190, 0)
+        UITheme.gold_button(btn)
         if Game.has_item(str(item["id"])):
             btn.text = "Куплено ✓"
             btn.disabled = true
@@ -190,7 +193,7 @@ func _build_confirm() -> void:
     title.text = "ПОДТВЕРЖДЕНИЕ ОПЛАТЫ"
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     title.add_theme_font_size_override("font_size", 21)
-    title.add_theme_color_override("font_color", Color(1, 0.82, 0.25))
+    title.add_theme_color_override("font_color", UITheme.GOLD_BRIGHT)
     box.add_child(title)
     box.add_child(HSeparator.new())
 
@@ -223,10 +226,12 @@ func _build_confirm() -> void:
     cancel_btn.text = "Отмена"
     cancel_btn.custom_minimum_size = Vector2(140, 44)
     cancel_btn.pressed.connect(_hide_confirm)
+    UITheme.dark_button(cancel_btn)
     buttons.add_child(cancel_btn)
     pay_btn = Button.new()
     pay_btn.custom_minimum_size = Vector2(200, 44)
     pay_btn.pressed.connect(_on_pay)
+    UITheme.gold_button(pay_btn, true)
     buttons.add_child(pay_btn)
 
     confirm_panel.visible = false
@@ -268,17 +273,8 @@ func _on_focls_changed(v: int) -> void:
 
 # ---------- стили ----------
 func _panel_style() -> StyleBoxFlat:
-    var sb := StyleBoxFlat.new()
-    sb.bg_color = Color(0.08, 0.09, 0.12, 0.92)
-    sb.set_corner_radius_all(12)
-    sb.border_color = Color(1, 0.82, 0.25, 0.35)
-    sb.set_border_width_all(1)
-    return sb
+    return UITheme.panel()
 
 
 func _card_style() -> StyleBoxFlat:
-    var sb := StyleBoxFlat.new()
-    sb.bg_color = Color(0.15, 0.16, 0.21)
-    sb.set_corner_radius_all(10)
-    sb.set_content_margin_all(14)
-    return sb
+    return UITheme.card()

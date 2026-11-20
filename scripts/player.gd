@@ -6,6 +6,7 @@ extends CharacterBody3D
 signal died
 signal flying_changed(on: bool)
 signal hp_changed(hp: float, max_hp: float)
+signal dashed
 signal inventory_changed
 signal slot_selected(index: int)
 signal item_used(id: String)
@@ -17,6 +18,7 @@ const ACCEL := 60.0
 const JUMP_VELOCITY := 10.5
 const GRAVITY := 28.0
 const RESPAWN_TIME := 2.0
+const DASH_CD := 2.0
 
 var spawn_position := Vector3(0, 2, 0)
 var dead := false
@@ -30,6 +32,13 @@ const INV_SIZE := 8
 var inventory_enabled := false
 var inv_selected := 0
 var inv_slots: Array = [{}, {}, {}, {}, {}, {}, {}, {}]
+
+# Камера: Shift - блокировка камеры (мышь захвачена без зажатия ПКМ).
+var camera_locked := false
+# Рывок на Q: включи dash_enabled в своём плейсе.
+var dash_enabled := false
+var dash_cd := 0.0
+var last_move_dir := Vector3.FORWARD
 
 var yaw := 0.0
 var pitch := -0.35
@@ -138,6 +147,15 @@ func set_flying(on: bool) -> void:
     else:
         model.position.y = 0.0
     flying_changed.emit(on)
+
+
+# ---------- рывок (общая возможность; креатор включает dash_enabled) ----------
+func _do_dash() -> void:
+    dash_cd = DASH_CD
+    var d := last_move_dir if last_move_dir.length() > 0.1 else Vector3(-sin(yaw), 0, -cos(yaw))
+    velocity.x += d.x * 15.0
+    velocity.z += d.z * 15.0
+    dashed.emit()
 
 
 # ---------- здоровье (общая система; креатор вызывает hurt/heal/set_max_hp) ----------
@@ -259,30 +277,39 @@ func _unhandled_input(event: InputEvent) -> void:
     if Game.is_ui_blocked():
         return
     var ke := event as InputEventKey
-    if inventory_enabled and not dead and ke != null and ke.pressed and not ke.echo:
-        var slot := -1
-        match ke.physical_keycode:
-            KEY_1: slot = 0
-            KEY_2: slot = 1
-            KEY_3: slot = 2
-            KEY_4: slot = 3
-            KEY_5: slot = 4
-            KEY_6: slot = 5
-            KEY_7: slot = 6
-            KEY_8: slot = 7
-        if slot >= 0:
-            inventory_select(slot)
+    if ke != null and ke.pressed and not ke.echo and not dead:
+        if ke.physical_keycode == KEY_SHIFT and not flying:
+            camera_locked = not camera_locked
+            Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if camera_locked else Input.MOUSE_MODE_VISIBLE
             get_viewport().set_input_as_handled()
-        elif ke.physical_keycode == KEY_V:
-            inventory_use_selected(true)
+        elif dash_enabled and ke.physical_keycode == KEY_Q and dash_cd <= 0.0:
+            _do_dash()
             get_viewport().set_input_as_handled()
-        elif ke.physical_keycode == KEY_G:
-            inventory_drop_selected()
-            get_viewport().set_input_as_handled()
+        elif inventory_enabled:
+            var slot := -1
+            match ke.physical_keycode:
+                KEY_1: slot = 0
+                KEY_2: slot = 1
+                KEY_3: slot = 2
+                KEY_4: slot = 3
+                KEY_5: slot = 4
+                KEY_6: slot = 5
+                KEY_7: slot = 6
+                KEY_8: slot = 7
+            if slot >= 0:
+                inventory_select(slot)
+                get_viewport().set_input_as_handled()
+            elif ke.physical_keycode == KEY_V:
+                inventory_use_selected(true)
+                get_viewport().set_input_as_handled()
+            elif ke.physical_keycode == KEY_G:
+                inventory_drop_selected()
+                get_viewport().set_input_as_handled()
     var mb := event as InputEventMouseButton
     if mb:
         if mb.button_index == MOUSE_BUTTON_RIGHT:
-            Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed else Input.MOUSE_MODE_VISIBLE
+            if not camera_locked:
+                Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed else Input.MOUSE_MODE_VISIBLE
         elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
             zoom = maxf(2.0, zoom - 1.0)
         elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -297,6 +324,9 @@ func _physics_process(delta: float) -> void:
     var blocked := Game.is_ui_blocked()
     if blocked and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
         Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+    elif not blocked and camera_locked and not dead and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+        Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+    dash_cd = maxf(dash_cd - delta, 0.0)
 
     if flying:
         var up := 0.0
@@ -318,6 +348,7 @@ func _physics_process(delta: float) -> void:
     var dir := Vector3.ZERO
     if input_dir != Vector2.ZERO:
         dir = (Basis(Vector3.UP, yaw) * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+        last_move_dir = dir
     var speed := FLY_SPEED if flying else SPEED
     velocity.x = move_toward(velocity.x, dir.x * speed, ACCEL * delta)
     velocity.z = move_toward(velocity.z, dir.z * speed, ACCEL * delta)
